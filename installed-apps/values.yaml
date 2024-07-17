@@ -1,0 +1,24 @@
+# App of apps pattern
+
+git:
+  repos:
+    your-repo-name: &defaultRepo
+      repoURL: "git@github.com:your_username/your_repo.git"
+    default: *defaultRepo
+
+namespace: argocd
+
+applications:
+
+  - name: argocd
+    gitRepo: luma-argocd            #Defaults to "default", defined above in the git section
+    targetRevision: HEAD            #Defaults to HEAD
+    gitPath: argocd                 #Defaults to app name
+    namespace: argocd               #Defaults to app name. We assume a separate namespace for each app.
+    createNamespace: true           #Defaults to true.
+    valuesFiles:
+      - values.yaml                 #Defaults to [ "values.yaml" ]
+    destinationCluster: in-cluster  #Defaults to "in-cluster". Useful for multi-cluster deployments.
+    project: default                #Defaults to "default"
+    sourceType: helm                #Defaults to "helm".
+    skipCrds: false                 #Defaults to false

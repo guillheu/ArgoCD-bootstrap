@@ -1,0 +1,41 @@
+{{ $argocdNamespace := (first .Values.applications).namespace }}
+{{ $git := .Values.git }}
+{{ range .Values.applications }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .name }}
+  namespace: {{ $argocdNamespace }}
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+  annotations:
+    {{ if .appAnotations }}
+    {{ .appAnnotations | nindent 4 }}
+    {{else}}
+    {}
+    {{end}}
+spec:
+  destination:
+    namespace: {{ default .name .namespace }}
+    name: {{ default "in-cluster" .destinationCluster }}
+  project: {{ default "default" .project }}
+  source:
+    path: {{ default .name .gitPath }}
+    repoURL: {{ (index $git.repos (default "default" .gitRepo)).repoURL }}
+    targetRevision: {{ default HEAD .targetRevision }}
+    {{- if or (eq .sourceType "helm") (not (hasKey . "sourceType"))}}
+    helm:
+      skipCrds: {{ default false .skipCrds }}
+      valueFiles:
+      {{- if .valuesFiles}}
+      {{ toYaml .valuesFiles | nindent 6}}
+      {{- else}}
+      - "values.yaml"
+      {{- end}}
+    {{- end }}
+  syncPolicy:
+    automated: null
+    syncOptions:
+      - CreateNamespace={{ default true .createNamespace }}
+{{end}}
